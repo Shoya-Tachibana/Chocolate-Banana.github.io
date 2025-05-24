@@ -133,90 +133,66 @@
             <button class="fix-button">− 修正</button>
         </div>
     </div>
-    <script>
-    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxAcYPXgR74H_AUHXD6SbUwjPQ4pqVfxSr5n9J536HtDqncfSzaHX3JFHB9sV4yKOCXlg/exec';
-    const DEBOUNCE_TIME = 10;
+<script>
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxAcYPXgR74H_AUHXD6SbUwjPQ4pqVfxSr5n9J536HtDqncfSzaHX3JFHB9sV4yKOCXlg/exec';
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const buttons = document.querySelectorAll('.styled-button');
-        const fixButtons = document.querySelectorAll('.fix-button');
-        let isGlobalThrottled = false;
+    document.addEventListener('DOMContentLoaded', () => {
+        const buttons = document.querySelectorAll('.styled-button');
+        const fixButtons = document.querySelectorAll('.fix-button');
 
-        buttons.forEach((button, index) => {
-            let count = 0;
-            const clickCountElement = button.nextElementSibling;
+        buttons.forEach((button, index) => {
+            let count = 0; // Initialize count for each button
+            const clickCountElement = button.nextElementSibling; // The div displaying the count
 
-            button.addEventListener('click', async () => {
-                if (isGlobalThrottled) return;
+            button.addEventListener('click', async () => {
+                count++; // Increment count
+                clickCountElement.textContent = `${count}`; // Update display
+                const buttonName = button.textContent.replace(/<br>/g, ''); // Get button text
 
-                isGlobalThrottled = true;
-                buttons.forEach(btn => btn.disabled = true);
-                fixButtons.forEach(btn => btn.disabled = true);
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            buttonName: buttonName,
+                            clickIncrement: 1
+                        }).toString(),
+                    });
+                } catch (error) {
+                    console.error('Error sending data to GAS:', error);
+                }
+            });
 
-                count++;
-                clickCountElement.textContent = `${count}`;
-                const buttonName = button.textContent.replace(/<br>/g, '');
+            const fixButton = fixButtons[index];
+            fixButton.addEventListener('click', async () => {
+                if (count <= 0) return; // Prevent negative counts
 
-                try {
-                    await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: new URLSearchParams({
-                            buttonName: buttonName,
-                            clickIncrement: 1
-                        }).toString(),
-                    });
-                } catch (error) {
-                    console.error('Error sending data to GAS:', error);
-                } finally {
-                    setTimeout(() => {
-                        isGlobalThrottled = false;
-                        buttons.forEach(btn => btn.disabled = false);
-                        fixButtons.forEach(btn => btn.disabled = false);
-                    }, DEBOUNCE_TIME);
-                }
-            });
+                count = Math.max(0, count - 1); // Decrement count, ensure it doesn't go below zero
+                clickCountElement.textContent = `${count}`; // Update display
+                const buttonName = button.textContent.replace(/<br>/g, ''); // Get button text
 
-            const fixButton = fixButtons[index];
-            fixButton.addEventListener('click', async () => {
-                if (count <= 0 || isGlobalThrottled) return;
-
-                isGlobalThrottled = true;
-                buttons.forEach(btn => btn.disabled = true);
-                fixButtons.forEach(btn => btn.disabled = true);
-
-                count = Math.max(0, count - 1);
-                clickCountElement.textContent = `${count}`;
-                const buttonName = button.textContent.replace(/<br>/g, '');
-
-                try {
-                    await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: new URLSearchParams({
-                            buttonName: buttonName,
-                            clickIncrement: -1,
-                            isCorrection: true
-                        }).toString(),
-                    });
-                } catch (error) {
-                    console.error('Error sending correction data to GAS:', error);
-                } finally {
-                    setTimeout(() => {
-                        isGlobalThrottled = false;
-                        buttons.forEach(btn => btn.disabled = false);
-                        fixButtons.forEach(btn => btn.disabled = false);
-                    }, DEBOUNCE_TIME);
-                }
-            });
-        });
-    });
-    </script>
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            buttonName: buttonName,
+                            clickIncrement: -1,
+                            isCorrection: true
+                        }).toString(),
+                    });
+                } catch (error) {
+                    console.error('Error sending correction data to GAS:', error);
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>
